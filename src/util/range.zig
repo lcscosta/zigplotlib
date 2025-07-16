@@ -18,7 +18,7 @@ pub fn Range(comptime T: type) type {
 
         /// Initialize a range with the minimum and maximum values set to the same value. [-∞; ∞]
         pub fn inf() Self {
-            if (@typeInfo(T) != .Float) @compileError("Only floating point types can have infinite ranges");
+            if (@typeInfo(T) != .float) @compileError("Only floating point types can have infinite ranges");
 
             return Self{
                 .min = -std.math.inf(T),
@@ -28,7 +28,7 @@ pub fn Range(comptime T: type) type {
 
         /// Initialize a range with the minimum and maximum values set to the same value. [∞; -∞]
         pub fn invInf() Self {
-            if (@typeInfo(T) != .Float) @compileError("Only floating point types can have infinite ranges");
+            if (@typeInfo(T) != .float) @compileError("Only floating point types can have infinite ranges");
 
             return Self{
                 .min = std.math.inf(T),

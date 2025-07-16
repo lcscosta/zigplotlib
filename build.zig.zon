@@ -1,7 +1,8 @@
 .{
-    .name = "zigplotlib",
-    .version = "0.1.4",
-    .minimum_zig_version = "0.13.0",
+    .name = .zigplotlib,
+    .version = "0.1.5",
+    .fingerprint = 0x1220c9f9f0e0ce2a,
+    .minimum_zig_version = "0.14.0",
     .dependencies = .{},
 
     .paths = .{
