@@ -1,5 +1,6 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
+const File = std.fs.File;
 
 pub const Line = @import("Line.zig");
 pub const Rect = @import("Rect.zig");
@@ -81,7 +82,7 @@ pub fn addPath(self: *SVG, options: Path.Options) !void {
 }
 
 /// The header of the SVG
-const SVG_HEADER =
+const SVG_HEADER: []const u8 =
     \\<?xml version="1.0" encoding="UTF-8" standalone="no"?>
     \\<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
     \\<svg width="{d}" height="{d}" viewBox="{d} {d} {d} {d}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -89,7 +90,7 @@ const SVG_HEADER =
 ;
 
 /// Write the SVG to the given writer
-pub fn writeTo(self: *const SVG, writer: anytype) anyerror!void {
+pub fn writeTo(self: *const SVG, writer: File.Writer) anyerror!void {
     // Write the header
     try writer.print(SVG_HEADER, .{
         self.width,

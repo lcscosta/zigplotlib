@@ -73,7 +73,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    const lib_module = &lib.root_module;
+    const lib_module = lib.root_module;
 
     _ = b.addModule("zigplotlib", .{
         .root_source_file = b.path("src/root.zig"),

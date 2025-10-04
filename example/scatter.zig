@@ -14,7 +14,7 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
-    var xoshiro = std.rand.Xoshiro256.init(100);
+    var xoshiro = std.Random.Xoshiro256.init(100);
     var rand = xoshiro.random();
 
     var x: [28]f32 = undefined;
