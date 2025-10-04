@@ -1,9 +1,11 @@
 # Zig Plot Lib
+> This project is currently stalled as I don't have much time to work on it. Anybody can freely create a PR to add new features and I'll review it; or you can also fork it yourself and add whatever you would like.
+
 The Zig Plot Lib is a library for plotting data in Zig. It is designed to be easy to use and to have a simple API.
 
 **Note:** This library is still in development and is not yet ready for production use.
 
-I'm developping this library with version 0.12.0-dev.1768+39a966b0a.
+I'm developping this library with version 0.13.0.
 
 ## Installation
 You can install the library by adding it to the `build.zig.zon` file, either manually like so:
@@ -37,7 +39,7 @@ const zigplotlib = b.dependency("zigplotlib", .{
     .optimize = optimize,
 });
 
-exe.addModule("plotlib", zigplotlib.module("zigplotlib"));
+exe.root_module.addImport("plotlib", zigplotlib.module("zigplotlib"));
 ```
 
 The name of the module (`plotlib`) can be changed to whatever you want.
@@ -101,7 +103,11 @@ pub fn main() !void {
         points3[i] = f3(@floatFromInt(i));
     }
 
-    var figure = Figure.init(allocator, .{});
+    var figure = Figure.init(allocator, .{
+        .title = .{
+            .text = "Example plot",
+        },
+    });
     defer figure.deinit();
 
     try figure.addPlot(Area {
@@ -176,9 +182,19 @@ The figure takes two arguments, the allocator (used to store the plot and genera
 | `plot_padding` | `f32` | The padding around the plot |
 | `background_color` | `RGB (u48)` | The background color of the plot |
 | `background_opacity` | `f32` | The opacity of the background |
+| `title` | `?...` | The style of the title (null to hide it) |
 | `value_padding` | `...` | The padding to use for the range of the plot |
 | `axis` | `...` | The style for the axis |
 | `legend` | `...` | The style for the legend |
+
+The `title` option contains the following parameters:
+| Option | Type | Description |
+| --- | --- | --- |
+| `text` | `[]const u8` | The title of the figure |
+| `position` | `enum { top, bottom }` | The position of the title |
+| `font_size` | `f32` | The font size of the title |
+| `color` | `RGB (u48)` | The color of the title |
+| `padding` | `f32` | The padding between the plot and the title |
 
 The `value_padding` option is defined like so:
 ```zig
@@ -199,6 +215,8 @@ The `axis` option contains more parameters:
 
 | Option | Type | Description |
 | --- | --- | --- |
+| `x_scale` | `enum { linear, log }` | The scale of the x axis |
+| `y_scale` | `enum { linear, log }` | The scale of the y axis |
 | `x_range` | `?Range(f32)` | The range of values for the x axis |
 | `y_range` | `?Range(f32)` | The range of values for the y axis |
 | `color` | `RGB (u48)` | The color of the axis |
@@ -206,7 +224,6 @@ The `axis` option contains more parameters:
 | `label_color` | `RGB (u48)` | The color of the labels |
 | `label_size` | `f32` | The font size of the labels |
 | `label_padding` | `f32` | The padding between the labels and the axis | 
-| `label_padding` | `f32` | The padding between the labels and the axis |
 | `label_font` | `[]const u8` | The font to use for the labels |
 | `tick_count_x` | `...` | The number of ticks to use on the x axis |
 | `tick_count_y` | `...` | The number of ticks to use on the y axis |
@@ -253,7 +270,7 @@ figure.addPlot(Line {
 
 ## Supported Plots
 
-There are currently 3 types of plots supported:
+There are currently 6 types of plots supported:
 
 ### Line
 
@@ -267,6 +284,7 @@ The options for styling the line plot are:
 | `color` | `RGB (u48)` | The color of the line |
 | `width` | `f32` | The width of the line |
 | `dash` | `?f32` | The length of the dash for the line (null means no dash)  |
+| `smooth` | `f32` | The smoothing factor for the line plot. It must be in range [0; 1]. (0 means no smoothing). |
 
 ### Area
 
@@ -337,6 +355,69 @@ The options for styling the stem plot are:
 | `shape` | `Shape` | The shape of the points (at the end of the stem) |
 | `radius` | `f32` | The radius of the points (at the end of the stem) |
 
+### Candlestick
+
+![Candlestick](example/out/candlestick.svg)
+
+The options for styling the candlestick plot are:
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `title` | `?[]const u8` | The title of the plot (used for the legend) |
+| `inc_color` | `RGB (u48)` | The color of the increasing candlestick |
+| `dec_color` | `RGB (u48)` | The color of the decreasing candlestick |
+| `width` | `f32` | The width of the candle |
+| `gap` | `f32` | The gap between the candles |
+| `line_thickness` | `f32` | The thickness of the sticks |
+
+The CandleStick plot works a bit differently, it doesn't take a `[]f32` but a `[]Candle`, named `candles` (there is no value for the x-axis).
+
+The parameters for the candle are as follows:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `open` | `f32` | The opening price of the candle |
+| `close` | `f32` | The closing price of the candle |
+| `high` | `f32` | The highest price of the candle |
+| `low` | `f32` | The lowest price of the candle |
+| `color` | `?RGB (u48)` | The color of the candle (overrides the default one) |
+
+## Supported Markers
+You can add a marker to the plot using the `addMarker` function.
+There are currently 2 types of markers supported:
+
+### ShapeMarker
+The shape marker allows you to write the plot with a shape.
+
+The options for the shape marker are:
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `x` | `f32` | The x coordinate of the marker |
+| `y` | `f32` | The y coordinate of the marker |
+| `shape` | `Shape` | The shape of the marker |
+| `size` | `f32` | The size of the marker |
+| `color` | `RGB (u48)` | The color of the marker |
+| `label` | `?[]const u8` | The label of the marker |
+| `label_color` | `?RGB (u48)` | The color of the label (default to the same as the shape) |
+| `label_size` | `f32` | The size of the label |
+| `label_weight` | `FontWeight` | The weight of the label |
+
+
+### TextMarker
+The Text marker is similar to the shape marker, but there is no shape, only text.
+
+The options for the text marker are:
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `x` | `f32` | The x coordinate of the marker |
+| `y` | `f32` | The y coordinate of the marker |
+| `size` | `f32` | The size of the text |
+| `color` | `RGB (u48)` | The color of the text |
+| `text` | `[]const u8` | The text of the marker |
+| `weight` | `FontWeight` | The weight of the text |
+
 ## Create a new plot type
 In order to create a new type of plot, all that is needed is to create a struct that contains an `interface` function, defined as follows:
 
@@ -354,14 +435,31 @@ The `Plot` object, contains the following fields:
 - a pointer to the get_range_y function `*const fn(*const anyopaque) Range(f32)`
 - a pointer to the draw function `*const fn(*const anyopaque, Allocator, *SVG, FigureInfo) anyerror!void`
 
-You can look at the implementation of the `Line`, `Scatter`, `Area`, `Step` or `Stem` plots for examples.
+You can look at the implementation of the `Line`, `Scatter`, `Area`, `Step`, `Stem`, or `CandleStick` plots for examples.
+
+## Create a new marker type
+Same as for the plots, to create a new type of marker, all that is needed is to create a struct that contains an `interface` function, defined as follows:
+
+```zig
+pub fn interface(self: *const Self) Marker {
+    ...
+}
+```
+
+The `Marker` object, contains the following fields:
+- a pointer to the data (`*const anyopaque`)
+- a pointer to the draw function `*const fn(*const anyopaque, Allocator, *SVG, FigureInfo) anyerror!void`
+
+You can look at the implementation of the `ShapeMarker` or `TextMarker` for examples.
 
 ## Roadmap
-- Ability to set the title of a plot
 - Ability to set the title of the axis
 - Ability to add arrows at the end of axis
 - More plot types
     - Bar
     - Histogram
-    - Logarithmic
-- Spline shape for line plot
+- Linear Interpolation with the figure border
+- Themes
+
+### Known issue(s)
+- Imperfect text width calculation for the legend (only when the legend is positioned on the right)

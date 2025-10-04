@@ -1,22 +1,22 @@
 const std = @import("std");
 
-fn add_start_point(
-    b: *std.Build, 
-    target: std.zig.CrossTarget, 
-    optimize: std.builtin.OptimizeMode, 
-    name: []const u8, 
-    description: []const u8, 
+fn addStartPoint(
+    b: *std.Build,
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+    name: []const u8,
+    description: []const u8,
     path: []const u8,
-    module: *std.build.Module,
-) void {
+    module: *std.Build.Module,
+) *std.Build.Step {
     const exe = b.addExecutable(.{
-        .name = "zigplotlib",
-        .root_source_file = .{ .path = path },
+        .name = name,
+        .root_source_file = b.path(path),
         .target = target,
         .optimize = optimize,
     });
 
-    exe.addModule("zigplotlib", module);
+    exe.root_module.addImport("zigplotlib", module);
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
@@ -45,6 +45,8 @@ fn add_start_point(
     // This will evaluate the `run` step rather than the default, which is "install".
     const run_step = b.step(name, description);
     run_step.dependOn(&run_cmd.step);
+
+    return run_step;
 }
 
 // Although this function looks imperative, note that its job is to
@@ -66,13 +68,15 @@ pub fn build(b: *std.Build) void {
         .name = "zigplotlib",
         // In this case the main source file is merely a path, however, in more
         // complicated build scripts, this could be a generated file.
-        .root_source_file = .{ .path = "src/root.zig" },
+        .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,
     });
 
-    const lib_module = b.addModule("zigplotlib", .{
-        .source_file = .{ .path = "src/root.zig" },
+    const lib_module = &lib.root_module;
+
+    _ = b.addModule("zigplotlib", .{
+        .root_source_file = b.path("src/root.zig"),
     });
 
     // This declares intent for the library to be installed into the standard
@@ -80,17 +84,29 @@ pub fn build(b: *std.Build) void {
     // running `zig build`).
     b.installArtifact(lib);
 
-    add_start_point(b, target, optimize, "run", "Run the App", "src/main.zig", lib_module);
-    add_start_point(b, target, optimize, "step-example", "Run the Step example", "example/step.zig", lib_module);
-    add_start_point(b, target, optimize, "stem-example", "Run the Stem example", "example/stem.zig", lib_module);
-    add_start_point(b, target, optimize, "scatter-example", "Run the Scatter example", "example/scatter.zig", lib_module);
-    add_start_point(b, target, optimize, "line-example", "Run the Line example", "example/line.zig", lib_module);
-    add_start_point(b, target, optimize, "area-example", "Run the Area example", "example/area.zig", lib_module);
+    const run_step = addStartPoint(b, target, optimize, "run", "Run the App", "src/main.zig", lib_module);
+    const step_step = addStartPoint(b, target, optimize, "step-example", "Run the Step example", "example/step.zig", lib_module);
+    const stem_step = addStartPoint(b, target, optimize, "stem-example", "Run the Stem example", "example/stem.zig", lib_module);
+    const scatter_step = addStartPoint(b, target, optimize, "scatter-example", "Run the Scatter example", "example/scatter.zig", lib_module);
+    const line_step = addStartPoint(b, target, optimize, "line-example", "Run the Line example", "example/line.zig", lib_module);
+    const area_step = addStartPoint(b, target, optimize, "area-example", "Run the Area example", "example/area.zig", lib_module);
+    const log_step = addStartPoint(b, target, optimize, "log-example", "Run the Logarithmic example", "example/logarithmic.zig", lib_module);
+    const candlestick_step = addStartPoint(b, target, optimize, "candlestick-example", "Run the Candle stick example", "example/candle_stick.zig", lib_module);
+
+    const all_step = b.step("all", "Run all the examples");
+    all_step.dependOn(run_step);
+    all_step.dependOn(step_step);
+    all_step.dependOn(stem_step);
+    all_step.dependOn(scatter_step);
+    all_step.dependOn(line_step);
+    all_step.dependOn(area_step);
+    all_step.dependOn(log_step);
+    all_step.dependOn(candlestick_step);
 
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
     const lib_unit_tests = b.addTest(.{
-        .root_source_file = .{ .path = "src/root.zig" },
+        .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -98,7 +114,7 @@ pub fn build(b: *std.Build) void {
     const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
 
     const exe_unit_tests = b.addTest(.{
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
